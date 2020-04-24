@@ -20,8 +20,8 @@ public class Calc implements ActionListener {
 
     private boolean connected = false;
     private Socket s;
-    private PrintWriter pw;
-    private BufferedReader br;
+    private DataInputStream  din;
+    private DataOutputStream dout;
 
     public void init () {
         //----------------------1ROW-----------------------------------
@@ -133,6 +133,23 @@ public class Calc implements ActionListener {
         f.setResizable(false);
         f.setLocationRelativeTo(null);
 
+        f.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                if (!s.isClosed()) {
+                    try {
+                        dout.writeUTF("EXIT");
+                        dout.flush();
+                        s.close();
+                        dout.close();
+                        din.close();
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+                }
+            }
+        });
+
         connectToServer();
     }
 
@@ -157,23 +174,26 @@ public class Calc implements ActionListener {
 
         // operations
         if (source == badd) {
-            addToExpression("+");
+            addToExpression(" + ");
         } else if (source == bsub) {
-            addToExpression("-");
+            addToExpression(" - ");
         } else if(source == bmul) {
-            addToExpression("*");
+            addToExpression(" * ");
         } else if(source == bdiv) {
-            addToExpression("/");
+            addToExpression(" / ");
         }
 
         // AC button
         if (source == bclr) {
-            expression = "";
+            expression = "0";
 
         // C button
         } else if (source == bdel) {
-            if (!(expression.length() == 1 && expression.charAt(0) == '0'))
-                expression = expression.substring(0, expression.length()-1);
+            if (!(expression.length() == 1 && expression.charAt(0) == '0')) {
+                if (expression.charAt(expression.length()-1) == ' ')
+                    expression = expression.substring(0, expression.length() - 3);
+                else expression = expression.substring(0, expression.length() - 1);
+            }
             if (expression.length() == 0)
                 expression = "0";
         }
@@ -196,24 +216,25 @@ public class Calc implements ActionListener {
     }
 
     private void askServerForAnswer() {
-        System.out.printf("Server call to find %s\n", expression);
+        System.out.printf("CLIENT: Server call to find %s\n", expression);
 
         // server call here
-        pw.write(expression);
-        pw.flush();
         try {
-            expression = br.readLine();
+            dout.writeUTF(expression);
+            dout.flush();
+            expression = din.readUTF();
         } catch (Exception e) {
             problemConnecting();
             e.printStackTrace();
         }
+        updateDisplay();
     }
 
     private void connectToServer() {
         try {
             s = new Socket(InetAddress.getLocalHost(), Main.PORT);
-            pw = new PrintWriter(new OutputStreamWriter(s.getOutputStream()));
-            br = new BufferedReader(new InputStreamReader(s.getInputStream()));
+            dout = new DataOutputStream(s.getOutputStream());
+            din = new DataInputStream(s.getInputStream());
             noProblemConnecting();
         } catch (Exception e) {
             problemConnecting();
