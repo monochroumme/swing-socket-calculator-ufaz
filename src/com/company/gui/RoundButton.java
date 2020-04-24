@@ -1,3 +1,8 @@
+package com.company.gui;
+
+
+import com.company.Main;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.Ellipse2D;
@@ -9,7 +14,7 @@ class RoundButton extends JButton {
         super(label);
         setContentAreaFilled(false);
         setForeground(Color.WHITE);
-        setBackground(new Color(51,51,51));
+        setBackground(Main.DARK_GRAY);
         setBorder(null);
         setMargin(new Insets(0, 0, 0, 0));
         setFont(new Font("Helvetica", 0, 27));
